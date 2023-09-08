@@ -22,6 +22,7 @@
 
 #include <string>
 #include <map>
+#include <generated/autoconf.h>
 
 
 class Serializer
@@ -54,6 +55,9 @@ class Serializer
     const uint32_t IntRegStartAddr;
     const uint32_t FloatRegStartAddr;
     const uint32_t CSRStartAddr;
+  #ifdef CONFIG_RVV
+    const uint32_t VectorRegStartAddr;
+  #endif // CONFIG_RVV
     const uint32_t PCAddr;
     const uint32_t CptFlagAddr;
 

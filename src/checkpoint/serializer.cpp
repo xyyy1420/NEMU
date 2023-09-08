@@ -48,6 +48,9 @@ Serializer::Serializer() :
     IntRegStartAddr(INT_REG_CPT_ADDR - BOOT_CODE),
     FloatRegStartAddr(FLOAT_REG_CPT_ADDR - BOOT_CODE),
     CSRStartAddr(CSR_CPT_ADDR - BOOT_CODE),
+  #ifdef CONFIG_RVV
+    VectorRegStartAddr(VECTOR_REGS_CPT_ADDR - BOOT_CODE),
+  #endif // CONFIG_RVV
     PCAddr(PC_CPT_ADDR - BOOT_CODE),
     CptFlagAddr(BOOT_FLAGS - BOOT_CODE)
 {
@@ -75,7 +78,8 @@ void Serializer::serializePMem(uint64_t inst_count) {
   if (!fp) {
     xpanic("Cannot open restorer %s\n", restorer);
   }
-  uint32_t restorer_size = 0x400;
+  uint32_t restorer_size = 0x700;
+//  uint32_t restorer_size = 0x1100;
   fseek(fp, 0, SEEK_SET);
   assert(restorer_size == fread(pmem, 1, restorer_size, fp));
   fclose(fp);
@@ -146,6 +150,18 @@ void Serializer::serializeRegs() {
   Log("Writing PC: 0x%lx at addr 0x%x", cpu.pc, PC_CPT_ADDR);
 
 
+  #ifdef CONFIG_RVV
+  auto *vectorRegCpt = (uint64_t *) (get_pmem() + VectorRegStartAddr);
+  for (unsigned i = 0; i < 32; i++) {
+    *(vectorRegCpt+i) = cpu.vr[i]._64[0];
+    *(vectorRegCpt+i+1) = cpu.vr[i]._64[1];
+  }
+  Log("Writing vector registers to checkpoint memory @[0x%x, 0x%x) [0x%x, 0x%x)",
+      VECTOR_REGS_CPT_ADDR, VECTOR_REGS_CPT_ADDR + 32 * 16,
+      VectorRegStartAddr, VectorRegStartAddr + 32 *16
+      );
+  #endif // CONFIG_RVV
+
 //  csr_writeback();
   auto *csrCpt = (uint64_t *) (get_pmem() + CSRStartAddr);
 //  Log("csrCpt: %p\n",csrCpt);
@@ -169,6 +185,7 @@ void Serializer::serializeRegs() {
       Log("CSR 0x%x: 0x%lx", i, *(csrCpt + i));
     }
   }
+
   Log("Writing CSR to checkpoint memory @[0x%x, 0x%x) [0x%x, 0x%x)",
       CSR_CPT_ADDR, CSR_CPT_ADDR + 4096 * 8,
       CSRStartAddr, CSRStartAddr + 4096 * 8
@@ -231,7 +248,9 @@ void Serializer::init() {
     intervalSize = checkpoint_interval;
     Log("Taking uniform checkpionts with interval %lu", checkpoint_interval);
     nextUniformPoint = intervalSize;
-  }
+  }else if(checkpoint_state==ManualOneShotCheckpointing){
+    Log("Taking manual oneshot checkpionts with signal <C-c>");
+  }else{}
   pathManager.setCheckpointingOutputDir();
 }
 

@@ -700,6 +700,7 @@ static word_t priv_instr(uint32_t op, const rtlreg_t *src) {
       mstatus->mpp = MODE_U;
       update_mmu_state();
       Loge("Executing mret to 0x%lx", mepc->val);
+//      Log("Executing mret to 0x%lx", mepc->val);
       return mepc->val;
       break;
 #ifdef CONFIG_RV_SVINVAL

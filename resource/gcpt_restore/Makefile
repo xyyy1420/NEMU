@@ -13,6 +13,9 @@
 # See the Mulan PSL v2 for more details.
 #**************************************************************************************/
 
+-include $(NEMU_HOME)/include/config/auto.conf
+-include $(NEMU_HOME)/include/config/auto.conf.cmd
+
 NAME = gcpt
 
 BUILD_DIR ?= ./build
@@ -24,13 +27,19 @@ BINARY ?= $(BUILD_DIR)/$(NAME)
 
 INC_DIR += $(NEMU_HOME)/include/generated
 # Compilation flags
-CROSS_COMPILE = riscv64-linux-gnu-
+CROSS_COMPILE = riscv64-unknown-elf-
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 INCLUDES  = $(addprefix -I, $(INC_DIR))
 CFLAGS   += -fno-PIE -mcmodel=medany -O2 -MMD -Wall -Werror $(INCLUDES)
+
+
+ifdef CONFIG_RVV
+CFLAGS += -march=rv64gcv
+endif
+
 
 # Files to be compiled
 SRCS = $(shell find src/ -name "*.[cS]")

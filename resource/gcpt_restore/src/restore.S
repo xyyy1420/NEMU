@@ -32,12 +32,21 @@ boot_decide_vector:
 restore_csr_vector:
   # set fs
   li t0, MSTATUS_FS
+  # set for using vector ext instructions
+  li t1, MSTATUS_VS
+  or t0, t1, t0
   csrs  CSR_MSTATUS, t0
 
   li t0, CSR_CPT_ADDR
   CSRS(CSRS_RESTORE)
+
+  li t0, CSR_CPT_ADDR
   HCSRS(CSRS_RESTORE)
-  #VCSRS(CSRS_RESTORE)
+
+  RESTORE_VECTORS
+
+  li t0, CSR_CPT_ADDR
+  VCSRS(CSRS_RESTORE)
 
   # set MPIE to the value of MIE
   csrr t0, CSR_MSTATUS
@@ -48,7 +57,6 @@ restore_csr_vector:
 
   # clear MIE
   csrc CSR_MSTATUS, t1
-
 
   li t0, MSTATUS_MPP # MPP is M
   ld s2, 8(s0) #load mode flag into s2
