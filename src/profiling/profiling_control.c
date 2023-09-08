@@ -16,9 +16,12 @@ bool workload_loaded=false;
 
 void reset_inst_counters() {
   extern uint64_t g_nr_guest_instr;
-  extern bool workload_loaded;
-  Log("Start profiling, resetting inst count from %lu to 1, (n_remain_total will not be cleared)\n", g_nr_guest_instr);
+  Log("Resetting inst count from %lu to 1, (n_remain_total will not be cleared)\n", g_nr_guest_instr);
   g_nr_guest_instr = 1;
+}
+void set_workload_loaded(){
+  Log("Start profiling\n");
+  extern bool workload_loaded;
   workload_loaded=true;
 }
 

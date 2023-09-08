@@ -40,6 +40,7 @@ def_EHelper(nemu_trap) {
   } else if (cpu.gpr[10]._64 == 0x101) {
     if (!workload_loaded) {
       reset_inst_counters();
+      set_workload_loaded();
     }
 
 

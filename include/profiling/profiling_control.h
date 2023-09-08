@@ -30,5 +30,6 @@ extern bool workload_loaded;
 extern bool donot_skip_boot;
 
 void reset_inst_counters();
+void set_workload_loaded();
 
 #endif // __PROFILING_CONTROL_H__
