@@ -116,20 +116,22 @@ static inline word_t* csr_decode(uint32_t addr) {
 }
 
 // WPRI, SXL, UXL cannot be written
+#ifdef CONFIG_RVV
+#define SSTATUS_WMASK ((1 << 19) | (1 << 18) | (0x3 << 13) | (0x3 << 9) | (1 << 8) | (1 << 5) | (1 << 1))
+#else
+#define SSTATUS_WMASK ((1 << 19) | (1 << 18) | (0x3 << 13) | (1 << 8) | (1 << 5) | (1 << 1))
+#endif // CONFIG_RVV
+
 #ifdef CONFIG_RVH
 #define MSTATUS_WMASK (0x7e79bbUL) | (1UL << 63) | (1UL << 39) | (1UL << 38)
 #define HSTATUS_WMASK ((1 << 22) | (1 << 21) | (1 << 20) | (1 << 18) | (0x3f << 12) | (1 << 9) | (1 << 8) | (1 << 7) | (1 << 6) | (1 << 5))
 #else
 #define MSTATUS_WMASK (0x7e79bbUL) | (1UL << 63)
-#endif
-
-#ifdef CONFIG_RVH
-#define MIP_MASK ((1 << 9) | (1 << 5) | (1 << 1))
-#define MIE_MASK ((1 << 9) | (1 << 5) | (1 << 1))
-#else
+#define SSTATUS_RMASK (SSTATUS_WMASK | (0x3 << 15) | (1ull << 63) | (3ull << 32))
 #define MIP_MASK ((1 << 9) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 1) | (1 << 0))
 #define MIE_MASK ((1 << 9) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 1) | (1 << 0))
-#endif
+#endif //CONFIG_RVH
+
 #ifdef CONFIG_RVH
 #define COUNTEREN_MASK 0
 #define MIDELEG_FORCED_MASK ((1 << 12) | (1 << 10) | (1 << 6) | (1 << 2)) // mideleg bits 2、6、10、12 are read_only one
@@ -144,7 +146,7 @@ static inline word_t* csr_decode(uint32_t addr) {
 #define HIP_WMASK VSSIP
 #define HIE_RMASK HS_MASK
 #define HIE_WMASK HS_MASK
-#endif 
+#endif  //CONFIG_RVH
 
 #define SIE_MASK (0x222 & mideleg->val)
 #define SIP_MASK (0x222 & mideleg->val)
@@ -280,12 +282,13 @@ if (is_read(vsie))           { return (mie->val & (hideleg->val & (mideleg->val 
   else if (is_read(stvec))  { return stvec->val & ~(0x2UL); }
   else if (is_read(sip))    { 
 #ifndef CONFIG_RVH
-    difftest_skip_ref();
+    difftest_skip_ref(); return mip->val & SIP_MASK; }
 #endif 
     return mip->val & SIP_MASK; 
   }
 #ifdef CONFIG_RVV
   else if (is_read(vcsr))   { return (vxrm->val & 0x3) << 1 | (vxsat->val & 0x1); }
+  else if (is_read(vlenb))  { return VLEN >> 3; }
 #endif
   else if (is_read(fcsr))   {
 #ifdef CONFIG_FPU_NONE
@@ -439,7 +442,9 @@ static inline void csr_write(word_t *dest, word_t src) {
 #endif
   else if (is_write(mideleg)) { *dest = src & 0x222; }
 #ifdef CONFIG_RVV
-  else if (is_write(vcsr)) { vxrm->val = (src >> 1) & 0x3; vxsat->val = src & 0x1; }
+  else if (is_write(vcsr)) { *dest = src & 0b111; vxrm->val = (src >> 1) & 0b11; vxsat->val = src & 0b1; }
+  else if (is_write(vxrm)) { *dest = src & 0b11; vcsr->val = (vxrm->val) << 1 | vxsat->val; }
+  else if (is_write(vxsat)) { *dest = src & 0b1; vcsr->val = (vxrm->val) << 1 | vxsat->val; }
 #endif
 #ifdef CONFIG_MISA_UNCHANGEABLE
   else if (is_write(misa)) { /* do nothing */ }

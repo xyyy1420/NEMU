@@ -25,17 +25,12 @@ void vld(int mode, int is_signed, Decode *s, int mmu_mode) {
   //        2  ->  16           2  ->  32
   //        4  ->  32           3  ->  64
   s->v_width = s->v_width == 0 ? 1 << vtype->vsew : s->v_width;
-  bool error = (s->v_width * 8) > (8 << vtype->vsew);
-  if(error) {
-    printf("vld encounter an instr: v_width > SEW: mode::%d is_signed:%d\n", mode, is_signed);
-    longjmp_raise_intr(EX_II);
-  }
   // previous decode does not load vals for us 
   rtl_lr(s, &(s->src1.val), s->src1.reg, 4);
 
   word_t idx;
   rtl_mv(s, &(tmp_reg[0]), &(s->src1.val));
-  for(idx = vstart->val; idx < vl->val; idx ++) {
+  for(idx = vstart->val; idx < vl->val*(s->v_nf+1); idx ++) {
     //TODO: SEW now only supports LE 64bit
     //TODO: need special rtl function, but here ignore it
     if(mode == MODE_INDEXED) {
@@ -58,6 +53,7 @@ void vld(int mode, int is_signed, Decode *s, int mmu_mode) {
     switch (mode) {
       case MODE_UNIT   : rtl_addi(s, &tmp_reg[0], &tmp_reg[0], s->v_width); break;
       case MODE_STRIDED: rtl_add(s, &tmp_reg[0], &tmp_reg[0], &id_src2->val) ; break;
+      //default : assert(0);
     }
   }
 
@@ -82,7 +78,7 @@ void vst(int mode, Decode *s, int mmu_mode) {
 
   word_t idx;
   rtl_mv(s, &(tmp_reg[0]), &(s->src1.val));
-  for(idx = vstart->val; idx < vl->val; idx ++) {
+  for(idx = vstart->val; idx < vl->val*(s->v_nf+1); idx ++) {
     //TODO: SEW now only supports LE 64bit
     //TODO: need special rtl function, but here ignore it
     if(mode == MODE_INDEXED) {
@@ -123,6 +119,7 @@ void vst(int mode, Decode *s, int mmu_mode) {
     switch (mode) {
       case MODE_UNIT   : rtl_addi(s, &tmp_reg[0], &tmp_reg[0], s->v_width); break;
       case MODE_STRIDED: rtl_add(s, &tmp_reg[0], &tmp_reg[0], &id_src2->val) ; break;
+      //default : assert(0);
     }
   }
   // TODO: the idx larger than vl need reset to zero.
