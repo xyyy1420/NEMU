@@ -63,25 +63,33 @@ typedef struct {
     uint64_t _64;
   } gpr[32];
 
+#ifndef CONFIG_FPU_NONE
   union {
     uint64_t _64;
   } fpr[32];
+#endif // CONFIG_FPU_NONE
 
   // shadow CSRs for difftest
-  uint64_t pc;
-  uint64_t mstatus, mcause, mepc;
-  uint64_t sstatus, scause, sepc;
-
-  uint64_t satp, mip, mie, mscratch, sscratch, mideleg, medeleg;
-  uint64_t mtval, stval, mtvec, stvec;
   uint64_t mode;
+  uint64_t mstatus, sstatus;
+  uint64_t mepc, sepc;
+  uint64_t mtval, stval;
+  uint64_t mtvec, stvec;
+  uint64_t mcause, scause;
+  uint64_t satp;
+  uint64_t mip, mie;
+  uint64_t mscratch, sscratch;
+  uint64_t mideleg, medeleg;
+  uint64_t pc;
   // Above will be synced by regcpy when run difftest, DO NOT TOUCH
+
 #ifdef CONFIG_RVH
   uint64_t v; // virtualization mode
   uint64_t mtval2, mtinst, hstatus, hideleg, hedeleg;
   uint64_t hcounteren, htval, htinst, hgatp, vsstatus;
   uint64_t vstvec, vsepc, vscause, vstval, vsatp, vsscratch;
 #endif
+
 #ifdef CONFIG_RVV
   //vector
   union {
@@ -102,6 +110,9 @@ typedef struct {
   bool amo;
   int mem_exception;
 
+#ifdef CONFIG_TVAL_EX_II
+  uint32_t instr;
+#endif
   // for LR/SC
   uint64_t lr_addr;
   uint64_t lr_valid;
