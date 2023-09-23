@@ -58,7 +58,7 @@ enum { DIFFTEST_TO_DUT, DIFFTEST_TO_REF };
 
 #else
 # error Unsupported ISA
-#endif
+#endif //if
 
 #ifdef RV64_UARCH_SYNC
 struct SyncState {
